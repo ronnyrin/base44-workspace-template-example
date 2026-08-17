@@ -1,0 +1,20 @@
+{
+  "name": "base44-workspace-template-example",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Example workspace template for Base44 App Templates. Every new app in the workspace boots from an image built on top of this repo — the workspace admin points at it, Base44 bakes it, then serves it.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^5.4.11"
+  }
+}
