@@ -1,0 +1,29 @@
+import { createServer } from 'node:http';
+import { renderHome } from './routes/home.js';
+
+/**
+ * Main entry — a plain Node HTTP server, no framework, no bundler.
+ *
+ * This repo is a Base44 workspace-template example. Everything under `app/`
+ * (the `code_root` in base44.template.json) travels with each new app in the
+ * workspace; every request lands here first. The workspace image bakes the
+ * TypeScript build output into `dist/` — `npm start` runs the compiled JS.
+ */
+
+const PORT = Number.parseInt(process.env.PORT ?? '3000', 10);
+
+const server = createServer((req, res) => {
+  const url = new URL(req.url ?? '/', `http://localhost:${PORT}`);
+  if (url.pathname === '/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'ok' }));
+    return;
+  }
+  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+  res.end(renderHome());
+});
+
+server.listen(PORT, '0.0.0.0', () => {
+  // eslint-disable-next-line no-console
+  console.log(`workspace-template example listening on http://0.0.0.0:${PORT}`);
+});

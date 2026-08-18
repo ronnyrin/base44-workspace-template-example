@@ -1,20 +1,15 @@
 {
   "name": "base44-workspace-template-example",
   "private": true,
-  "version": "0.1.0",
-  "type": "module",
-  "description": "Example workspace template for Base44 App Templates. Every new app in the workspace boots from an image built on top of this repo — the workspace admin points at it, Base44 bakes it, then serves it.",
+  "version": "0.2.0",
+  "description": "Example workspace template for Base44 App Templates. A plain Node HTTP server in TypeScript — no bundler, no UI framework — to demonstrate the pipeline works on any Node repo shape, not just Vite/React.",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "tsc --watch & node --watch dist/server.js"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.4",
-    "vite": "^5.4.11"
+    "@types/node": "^20.14.10",
+    "typescript": "^5.5.4"
   }
 }

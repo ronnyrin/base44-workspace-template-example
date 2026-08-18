@@ -1,9 +1,14 @@
 # Base44 workspace template — example
 
-This repo is an example of what a **Base44 workspace app template** looks like.
-Point a workspace's App Template configuration at this repo (via
-`Workspace Settings → App template → Configure`) and every new app in that
-workspace will boot from an image built on top of it.
+Example workspace template for **Base44 App Templates**. Point a workspace at
+this repo (`Workspace Settings → App template → Configure`) and every new app
+in that workspace boots from an image built on top of it.
+
+**Not Vite. Not React. Not a bundler beyond `tsc`.** This template is a plain
+Node HTTP server in TypeScript, on purpose — to demonstrate that Base44
+workspace templates aren't tied to any particular framework. Any Node repo
+shape works as long as it declares an `install_command` + `build_command` +
+`start_command` + `port` in `base44.template.json`.
 
 The full design lives in the B4P doc → "Workspace App Templates — Design" tab.
 
@@ -20,32 +25,49 @@ At each build:
    COPY --from=repo /clone /app
    RUN find "${code_root}" -mindepth 1 -printf '%P\n' > /managed/scaffold-manifest.txt
    RUN ${install_command}
+   RUN ${build_command}
    ```
 4. Content-hashes `(source_sha, lockfile_hash)` → tags the image `ca-<hash>`
    → pushes to `base44/workspaces/<workspace_id>` in ECR.
-5. On promote-to-stable: every new app in the workspace boots from that image.
+5. Every new app in the workspace boots from that image, running
+   `${start_command}` and serving on `${port}`.
 
 ## Repo layout
 
 ```
 .
 ├── base44.template.json    # the manifest — this is the load-bearing file
-├── package.json            # Vite + React 18
-├── vite.config.js
-├── index.html
-└── src/                    # everything here is code_root — travels per-app
-    ├── main.jsx
-    ├── App.jsx
-    ├── components/
-    │   └── WorkspaceBanner.jsx
-    └── workspace-toolkit/
-        └── index.js        # shared utilities every new app can import
+├── package.json            # deps + build/start scripts
+├── tsconfig.json           # rootDir: app, outDir: dist
+└── app/                    # code_root — travels per-app
+    ├── server.ts           # main entry (plain node:http)
+    ├── routes/
+    │   └── home.ts         # a route module
+    └── lib/
+        └── branding.ts     # workspace-shared utility
 ```
 
-`code_root: "src"` in the manifest means everything under `src/` is
+`code_root: "app"` in the manifest means everything under `app/` is
 "workspace-shared code the app author sees and can edit in their app."
-Everything outside (`package.json`, `vite.config.js`, `node_modules`) is baked
-into the image and not part of the app's per-app file tree.
+Everything outside (`package.json`, `tsconfig.json`, `node_modules`,
+`dist/`) is baked into the image and not part of the app's per-app file
+tree.
+
+## Manifest
+
+```json
+{
+  "code_root": "app",
+  "install_command": "npm ci",
+  "build_command": "npm run build",
+  "start_command": "npm start",
+  "port": 3000
+}
+```
+
+Compare to a Vite/React workspace template — the ONLY thing that changes
+in the manifest between them is the values. Same five fields, same
+semantics, different shape entirely under the hood.
 
 ## How to test it end-to-end
 
@@ -65,15 +87,16 @@ into the image and not part of the app's per-app file tree.
 
 Fork this repo, then change:
 
-- **`src/components/WorkspaceBanner.jsx`** — the visible tell. Replace with
-  your team's branding / design system landing.
-- **`src/workspace-toolkit/`** — swap the toy `greet` export for whatever
-  shared code your workspace apps should get for free (API client, design
-  system entry, analytics wrapper, feature-flag reader, etc.).
+- **`app/lib/branding.ts`** — replace the toy `workspaceBanner()` with
+  your team's real shared modules: API client, feature-flag reader,
+  logger, analytics wrapper.
+- **`app/server.ts` / `app/routes/`** — replace the "hello" surface with
+  whatever runtime your workspace's apps should agree on from t=0.
 - **`package.json`** — add your workspace's runtime dependencies. Every new
   app in the workspace boots with these already installed.
-- **`base44.template.json`** — the manifest fields let you swap Vite for
-  another runner, or point `code_root` at a different directory.
+- **`base44.template.json`** — the manifest fields let you swap Node for
+  a different Node framework (Fastify, Express, Next, Astro, …) or point
+  `code_root` at a different directory.
 
 ## What lives here vs. in a per-app FileTree
 
