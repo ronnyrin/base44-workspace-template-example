@@ -44,7 +44,34 @@ At each build:
     ├── routes/
     │   └── home.ts         # a route module
     └── lib/
-        └── branding.ts     # workspace-shared utility
+        ├── branding.ts     # workspace-shared branding
+        ├── appParams.ts    # reads APPER_APP_ID / APPER_APP_BASE_URL from env
+        └── base44Client.ts # tiny fetch wrapper for calling Base44's backend
+```
+
+## Base44 platform wiring — server side
+
+Every workspace-baked runtime boots with two env vars auto-injected by the
+sandbox provider:
+
+```
+APPER_APP_ID         the Base44 UserApp _id this container is booting
+APPER_APP_BASE_URL   the platform's base URL for this environment
+```
+
+`app/lib/appParams.ts` reads them; `app/lib/base44Client.ts` is a small
+`fetch` wrapper around them. Server-side we deliberately don't ship the
+browser `@base44/sdk` — its shape (URL params + localStorage for auth)
+doesn't translate cleanly to Node. A workspace with real needs would swap
+`base44Client.ts` for its own client (workspace API key auth, retries,
+observability); this file is a starting point, not a library.
+
+Endpoints the demo server exposes:
+
+```
+GET /             home page (HTML, surfaces the injected env vars)
+GET /health       liveness probe ({"status": "ok"})
+GET /api/whoami   echoes {wired, app_id, base_url} from the env
 ```
 
 `code_root: "app"` in the manifest means everything under `app/` is
