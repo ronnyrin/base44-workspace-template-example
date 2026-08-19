@@ -21,8 +21,8 @@ FROM node:20-slim
 WORKDIR /app
 COPY . /app/
 
-# Scaffold snapshot — see comment above. `src` here matches `code_root` in
+# Scaffold snapshot — see comment above. `app` here matches `code_root` in
 # base44.template.json; keep them in sync when you rename the source dir.
-RUN mkdir -p /managed && find "src" -mindepth 1 -printf '%P\n' > /managed/scaffold-manifest.txt
+RUN mkdir -p /managed && find "app" -mindepth 1 -printf '%P\n' > /managed/scaffold-manifest.txt
 
 RUN npm ci
