@@ -1,87 +1,77 @@
-# Base44 workspace template — example
+# Base44 Project
 
-This repo is an example of what a **Base44 workspace app template** looks like.
-Point a workspace's App Template configuration at this repo (via
-`Workspace Settings → App template → Configure`) and every new app in that
-workspace will boot from an image built on top of it.
+Use this repository to run and edit the app locally, then publish changes back through Base44.
 
-The full design lives in the B4P doc → "Workspace App Templates — Design" tab.
+Any change pushed to the repo will also be reflected in the Base44 Builder.
 
-## What Base44 does with this repo
+## Prerequisites
 
-At each build:
+1. Clone the repository using the project's Git URL.
+2. Navigate to the project directory.
+3. Install dependencies: `npm install`.
+4. Install the Base44 CLI: `npm install -g base44@latest`.
 
-1. Clones the repo at the workspace's configured ref (default: `main`).
-2. Reads [`base44.template.json`](./base44.template.json) for the manifest —
-   `code_root`, `install_command`, `build_command`, `start_command`, `port`.
-3. Composes a Dockerfile that:
-   ```
-   FROM base44/managed-runtime-base:vN
-   COPY --from=repo /clone /app
-   RUN find "${code_root}" -mindepth 1 -printf '%P\n' > /managed/scaffold-manifest.txt
-   RUN ${install_command}
-   ```
-4. Content-hashes `(source_sha, lockfile_hash)` → tags the image `ca-<hash>`
-   → pushes to `base44/workspaces/<workspace_id>` in ECR.
-5. On promote-to-stable: every new app in the workspace boots from that image.
+See the [Base44 CLI docs](https://docs.base44.com/developers/references/cli/get-started/overview) if you want to run Base44 commands directly.
 
-## Repo layout
+## Run Locally
 
-```
-.
-├── base44.template.json    # the manifest — this is the load-bearing file
-├── package.json            # Vite + React 18
-├── vite.config.js
-├── index.html
-└── src/                    # everything here is code_root — travels per-app
-    ├── main.jsx
-    ├── App.jsx
-    ├── components/
-    │   └── WorkspaceBanner.jsx
-    └── workspace-toolkit/
-        └── index.js        # shared utilities every new app can import
+Run the full local development environment from the project root:
+
+```bash
+base44 dev
 ```
 
-`code_root: "src"` in the manifest means everything under `src/` is
-"workspace-shared code the app author sees and can edit in their app."
-Everything outside (`package.json`, `vite.config.js`, `node_modules`) is baked
-into the image and not part of the app's per-app file tree.
+`base44 dev` starts the local Base44 development backend and, when this app is configured for it, also starts the frontend dev server for you. Use the frontend URL printed by the command.
 
-## How to test it end-to-end
+For example, when the Base44 project config includes a `serveCommand`, `base44 dev` can launch the frontend too:
 
-1. In the workspace where you want to try this, enable the
-   `WORKSPACE_APP_TEMPLATES` PostHog flag for yourself (or use the temp
-   force-on commit on the PR branch).
-2. Go to `Workspace Settings → App template → Configure app template`.
-3. URL: `https://github.com/ronnyrin/base44-workspace-template-example`, ref: `main`.
-4. Save. Ready summary appears.
-5. Click **Trigger build**. Watch `last_build.status` cycle through
-   `queued → cloning → installing → snapshotting → pushing → done`.
-6. If it lands `done`, promote to `stable` if it isn't already.
-7. Create a new app. When the "Booted from the example workspace template"
-   purple banner shows up in the preview, the pipeline works end-to-end.
+```json5
+{
+  "site": {
+    "serveCommand": "npm run dev"
+  }
+}
+```
 
-## Customizing this for your own workspace
+In a Base44 project this lives in `base44/config.jsonc`.
 
-Fork this repo, then change:
+## Run Only The Frontend
 
-- **`src/components/WorkspaceBanner.jsx`** — the visible tell. Replace with
-  your team's branding / design system landing.
-- **`src/workspace-toolkit/`** — swap the toy `greet` export for whatever
-  shared code your workspace apps should get for free (API client, design
-  system entry, analytics wrapper, feature-flag reader, etc.).
-- **`package.json`** — add your workspace's runtime dependencies. Every new
-  app in the workspace boots with these already installed.
-- **`base44.template.json`** — the manifest fields let you swap Vite for
-  another runner, or point `code_root` at a different directory.
+If you only want to work on the frontend against the hosted Base44 backend, run:
 
-## What lives here vs. in a per-app FileTree
+```bash
+npm run dev
+```
 
-| Where | What |
-|---|---|
-| **This repo** | Runtime, deps, shared code, common layouts, design system, workspace utilities. Baked into the image; changes only via a new build. |
-| **Per-app FileTree in Base44's DB** | Everything the app author writes or the builder agent produces after app creation. Diverges freely; the image below stays frozen at whatever the app was created against. |
+Open the local URL printed by Vite.
 
-Anything under `code_root` in this repo is the **starting file tree** — copied
-into each new app's FileTree on creation. The app author can edit those files
-freely from there; the workspace image doesn't know or care.
+## Use The Hosted Backend
+
+For frontend-only development, create or update `.env.local` in the project root:
+
+```bash
+VITE_BASE44_APP_ID=your_app_id
+VITE_BASE44_APP_BASE_URL=https://your-app.base44.app
+```
+
+`VITE_BASE44_APP_ID` identifies the Base44 app.
+
+`VITE_BASE44_APP_BASE_URL` tells the Base44 Vite plugin where to send local `/api` requests. Point it at your deployed Base44 app URL when you want the local frontend to use the hosted backend.
+
+When you use `base44 dev`, the command injects the local Base44 values for you, so `.env.local` is mainly needed for frontend-only workflows.
+
+## Publish Your Changes
+
+After pushing your changes to git, open the Base44 dashboard and publish the app:
+
+```bash
+base44 dashboard open
+```
+
+## Docs & Support
+
+Documentation: [https://docs.base44.com/Integrations/Using-GitHub](https://docs.base44.com/Integrations/Using-GitHub)
+
+Base44 CLI command reference: [https://docs.base44.com/developers/references/cli/commands/introduction](https://docs.base44.com/developers/references/cli/commands/introduction)
+
+Support: [https://app.base44.com/support](https://app.base44.com/support)

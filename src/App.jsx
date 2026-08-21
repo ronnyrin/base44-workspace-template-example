@@ -1,38 +1,63 @@
-import { useState } from 'react';
-import { WorkspaceBanner } from './components/WorkspaceBanner.jsx';
-import { greet } from './workspace-toolkit/index.js';
+import { Toaster } from "@/components/ui/toaster"
+import { QueryClientProvider } from '@tanstack/react-query'
+import { queryClientInstance } from '@/lib/query-client'
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import PageNotFound from './lib/PageNotFound';
+import { AuthProvider, useAuth } from '@/lib/AuthContext';
+import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import ScrollToTop from './components/ScrollToTop';
+import { WorkspaceBanner } from '@/components/workspace/WorkspaceBanner';
+// Add page imports here
 
-/**
- * The app users of this workspace start from. Everything under `src/` travels
- * with each new app (per base44.template.json's `code_root: "src"`); the
- * workspace-toolkit + WorkspaceBanner give new apps a shared vocabulary from
- * their first render.
- */
-export default function App() {
-  const [count, setCount] = useState(0);
+const AuthenticatedApp = () => {
+  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+
+  // Show loading spinner while checking app public settings or auth
+  if (isLoadingPublicSettings || isLoadingAuth) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  // Handle authentication errors
+  if (authError) {
+    if (authError.type === 'user_not_registered') {
+      return <UserNotRegisteredError />;
+    } else if (authError.type === 'auth_required') {
+      // Redirect to login automatically
+      navigateToLogin();
+      return null;
+    }
+  }
+
+  // Render the main app
+  return (
+    <>
+    <WorkspaceBanner />
+    <Routes>
+      {/* Add your page Route elements here */}
+      <Route path="*" element={<PageNotFound />} />
+    </Routes>
+    </>
+  );
+};
+
+
+function App() {
 
   return (
-    <main style={{ fontFamily: 'system-ui, sans-serif', padding: 32 }}>
-      <WorkspaceBanner />
-      <h1 style={{ marginTop: 32 }}>{greet('there')}</h1>
-      <p style={{ color: '#555' }}>
-        You're looking at an app booted from a workspace-configured runtime
-        image. Any code under <code>src/</code> is part of the workspace
-        template; anything the user edits from here on is app-specific.
-      </p>
-      <button
-        type="button"
-        onClick={() => setCount((n) => n + 1)}
-        style={{
-          marginTop: 16,
-          padding: '8px 16px',
-          border: '1px solid #ccc',
-          borderRadius: 6,
-          cursor: 'pointer',
-        }}
-      >
-        Clicked {count} times
-      </button>
-    </main>
-  );
+    <AuthProvider>
+      <QueryClientProvider client={queryClientInstance}>
+        <Router>
+          <ScrollToTop />
+          <AuthenticatedApp />
+        </Router>
+        <Toaster />
+      </QueryClientProvider>
+    </AuthProvider>
+  )
 }
+
+export default App
