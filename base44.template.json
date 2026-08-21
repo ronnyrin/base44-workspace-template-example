@@ -3,5 +3,5 @@
   "install_command": "npm ci",
   "build_command": "npm run build",
   "start_command": "npm start",
-  "port": 3000
+  "port": 5173
 }

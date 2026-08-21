@@ -2,11 +2,11 @@
   "name": "base44-workspace-template-example",
   "private": true,
   "version": "0.2.0",
-  "description": "Example workspace template for Base44 App Templates. A plain Node HTTP server in TypeScript — no bundler, no UI framework — to demonstrate the pipeline works on any Node repo shape, not just Vite/React.",
+  "description": "Example workspace template for Base44 App Templates. A plain Node HTTP server in TypeScript \u2014 no bundler, no UI framework \u2014 to demonstrate the pipeline works on any Node repo shape, not just Vite/React.",
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
-    "dev": "tsc --watch & node --watch dist/server.js"
+    "dev": "tsc && (tsc --watch --preserveWatchOutput & node --watch dist/server.js)"
   },
   "devDependencies": {
     "@types/node": "^20.14.10",

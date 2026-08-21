@@ -16,7 +16,8 @@ import { readAppParams, isBase44Wired } from './lib/appParams.js';
  *   GET /api/whoami — echoes the injected APPER_APP_ID + APPER_APP_BASE_URL
  */
 
-const PORT = Number.parseInt(process.env.PORT ?? '3000', 10);
+// Default matches Base44's sandbox preview port; PORT still wins when set.
+const PORT = Number.parseInt(process.env.PORT ?? '5173', 10);
 
 const server = createServer((req, res) => {
   const url = new URL(req.url ?? '/', `http://localhost:${PORT}`);
