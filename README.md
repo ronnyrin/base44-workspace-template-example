@@ -1,14 +1,9 @@
 # Base44 workspace template — example
 
-Example workspace template for **Base44 App Templates**. Point a workspace at
-this repo (`Workspace Settings → App template → Configure`) and every new app
-in that workspace boots from an image built on top of it.
-
-**Not Vite. Not React. Not a bundler beyond `tsc`.** This template is a plain
-Node HTTP server in TypeScript, on purpose — to demonstrate that Base44
-workspace templates aren't tied to any particular framework. Any Node repo
-shape works as long as it declares an `install_command` + `build_command` +
-`start_command` + `port` in `base44.template.json`.
+This repo is an example of what a **Base44 workspace app template** looks like.
+Point a workspace's App Template configuration at this repo (via
+`Workspace Settings → App template → Configure`) and every new app in that
+workspace will boot from an image built on top of it.
 
 The full design lives in the B4P doc → "Workspace App Templates — Design" tab.
 
@@ -25,76 +20,32 @@ At each build:
    COPY --from=repo /clone /app
    RUN find "${code_root}" -mindepth 1 -printf '%P\n' > /managed/scaffold-manifest.txt
    RUN ${install_command}
-   RUN ${build_command}
    ```
 4. Content-hashes `(source_sha, lockfile_hash)` → tags the image `ca-<hash>`
    → pushes to `base44/workspaces/<workspace_id>` in ECR.
-5. Every new app in the workspace boots from that image, running
-   `${start_command}` and serving on `${port}`.
+5. On promote-to-stable: every new app in the workspace boots from that image.
 
 ## Repo layout
 
 ```
 .
 ├── base44.template.json    # the manifest — this is the load-bearing file
-├── package.json            # deps + build/start scripts
-├── tsconfig.json           # rootDir: app, outDir: dist
-└── app/                    # code_root — travels per-app
-    ├── server.ts           # main entry (plain node:http)
-    ├── routes/
-    │   └── home.ts         # a route module
-    └── lib/
-        ├── branding.ts     # workspace-shared branding
-        ├── appParams.ts    # reads APPER_APP_ID / APPER_APP_BASE_URL from env
-        └── base44Client.ts # tiny fetch wrapper for calling Base44's backend
+├── package.json            # Vite + React 18
+├── vite.config.js
+├── index.html
+└── src/                    # everything here is code_root — travels per-app
+    ├── main.jsx
+    ├── App.jsx
+    ├── components/
+    │   └── WorkspaceBanner.jsx
+    └── workspace-toolkit/
+        └── index.js        # shared utilities every new app can import
 ```
 
-## Base44 platform wiring — server side
-
-Every workspace-baked runtime boots with two env vars auto-injected by the
-sandbox provider:
-
-```
-APPER_APP_ID         the Base44 UserApp _id this container is booting
-APPER_APP_BASE_URL   the platform's base URL for this environment
-```
-
-`app/lib/appParams.ts` reads them; `app/lib/base44Client.ts` is a small
-`fetch` wrapper around them. Server-side we deliberately don't ship the
-browser `@base44/sdk` — its shape (URL params + localStorage for auth)
-doesn't translate cleanly to Node. A workspace with real needs would swap
-`base44Client.ts` for its own client (workspace API key auth, retries,
-observability); this file is a starting point, not a library.
-
-Endpoints the demo server exposes:
-
-```
-GET /             home page (HTML, surfaces the injected env vars)
-GET /health       liveness probe ({"status": "ok"})
-GET /api/whoami   echoes {wired, app_id, base_url} from the env
-```
-
-`code_root: "app"` in the manifest means everything under `app/` is
+`code_root: "src"` in the manifest means everything under `src/` is
 "workspace-shared code the app author sees and can edit in their app."
-Everything outside (`package.json`, `tsconfig.json`, `node_modules`,
-`dist/`) is baked into the image and not part of the app's per-app file
-tree.
-
-## Manifest
-
-```json
-{
-  "code_root": "app",
-  "install_command": "npm ci",
-  "build_command": "npm run build",
-  "start_command": "npm start",
-  "port": 3000
-}
-```
-
-Compare to a Vite/React workspace template — the ONLY thing that changes
-in the manifest between them is the values. Same five fields, same
-semantics, different shape entirely under the hood.
+Everything outside (`package.json`, `vite.config.js`, `node_modules`) is baked
+into the image and not part of the app's per-app file tree.
 
 ## How to test it end-to-end
 
@@ -114,16 +65,15 @@ semantics, different shape entirely under the hood.
 
 Fork this repo, then change:
 
-- **`app/lib/branding.ts`** — replace the toy `workspaceBanner()` with
-  your team's real shared modules: API client, feature-flag reader,
-  logger, analytics wrapper.
-- **`app/server.ts` / `app/routes/`** — replace the "hello" surface with
-  whatever runtime your workspace's apps should agree on from t=0.
+- **`src/components/WorkspaceBanner.jsx`** — the visible tell. Replace with
+  your team's branding / design system landing.
+- **`src/workspace-toolkit/`** — swap the toy `greet` export for whatever
+  shared code your workspace apps should get for free (API client, design
+  system entry, analytics wrapper, feature-flag reader, etc.).
 - **`package.json`** — add your workspace's runtime dependencies. Every new
   app in the workspace boots with these already installed.
-- **`base44.template.json`** — the manifest fields let you swap Node for
-  a different Node framework (Fastify, Express, Next, Astro, …) or point
-  `code_root` at a different directory.
+- **`base44.template.json`** — the manifest fields let you swap Vite for
+  another runner, or point `code_root` at a different directory.
 
 ## What lives here vs. in a per-app FileTree
 

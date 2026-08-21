@@ -1,7 +1,7 @@
 {
-  "code_root": "app",
+  "code_root": "src",
   "install_command": "npm ci",
   "build_command": "npm run build",
-  "start_command": "npm start",
+  "start_command": "npm run dev",
   "port": 5173
 }
