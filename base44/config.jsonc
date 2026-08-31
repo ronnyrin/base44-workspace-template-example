@@ -1,0 +1,21 @@
+{
+  // The Base44 CLI's own project config. A repo that has ever been a Base44 app
+  // already has this file, which is why becoming a workspace app source needs
+  // no template-specific manifest — the `site` block below IS the build
+  // contract the image build reads.
+  "name": "workspace-simple-client",
+  "site": {
+    // Must be a lockfile-exact `npm ci`: the image build bakes whatever this
+    // installs, and `npm install` would re-resolve floating ranges at build time.
+    "installCommand": "npm ci",
+    // Both of these must be `npm run <script>` invocations. The sandbox appends
+    // `-- --host 0.0.0.0 --port <n>` to serveCommand, which only `npm run`
+    // forwards reliably.
+    "buildCommand": "npm run build",
+    "serveCommand": "npm run dev",
+    "outputDirectory": "./dist"
+    // "devHostFlag" is omitted because scripts/serve.mjs reads `--host`, which
+    // is the default. A Next-style server that exits on `--host` would set
+    // "devHostFlag": "--hostname" here. `--port` is not configurable.
+  }
+}
