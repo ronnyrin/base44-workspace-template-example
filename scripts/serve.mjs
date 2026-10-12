@@ -43,6 +43,11 @@ source.addEventListener('reload', async () => {
   await Promise.all(emit('vite:beforeFullReload'));
   location.reload();
 });
+// Vite apps report mounting through Base44's Vite plugin. A reloaded preview loads hidden,
+// where the browser reports no first paint, so without this the editor never shows it.
+addEventListener('load', () => {
+  if (window.self !== window.top) window.parent.postMessage({ type: 'sandbox:onMounted' }, '*');
+});
 export function createHotContext() {
   return {
     on(event, listener) {
@@ -53,12 +58,19 @@ export function createHotContext() {
 }
 `;
 
+// The preview host keeps .js and .css in the browser cache for hours whatever this server
+// sends, so every local asset URL carries a version that changes with each edit.
+let version = Date.now();
+const LOCAL_ASSET = /(["'])(\.{0,2}\/[^"'?#\s]+\.(?:js|css))\1/g;
+const versioned = (text) => text.replace(LOCAL_ASSET, `$1$2?v=${version}$1`);
+
 const clients = new Set();
 let reloadTimer;
 function reloadClients() {
   // One reload for a burst of writes, such as a save that touches several files.
   clearTimeout(reloadTimer);
   reloadTimer = setTimeout(() => {
+    version = Date.now();
     for (const client of clients) client.write('event: reload\ndata: {}\n\n');
   }, 100);
 }
@@ -97,9 +109,11 @@ createServer(async (req, res) => {
   const file = join(ROOT, normalize(rel).replace(/^(\.\.[/\\])+/, ''));
 
   try {
-    const body = await readFile(file);
+    const type = extname(file);
+    const raw = await readFile(file);
+    const body = type === '.html' || type === '.js' ? versioned(raw.toString()) : raw;
     res.writeHead(200, {
-      'Content-Type': TYPES[extname(file)] ?? 'application/octet-stream',
+      'Content-Type': TYPES[type] ?? 'application/octet-stream',
       // The sandbox serves this over a generated preview host and reloads it
       // after every edit, so nothing may be cached.
       'Cache-Control': 'no-store',
