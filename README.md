@@ -13,7 +13,7 @@ config, deliberately: a repo that has ever been a Base44 app already declares
 how it installs, builds and serves, so making it a source needs no extra file.
 Only the `site` block is read, and only these keys:
 
-    installCommand    must be a lockfile-exact `npm ci`
+    installCommand    must be a lockfile-exact `npm install`
     buildCommand      must be `npm run <script>`
     serveCommand      must be `npm run <script>`; the sandbox appends
                       `-- <devHostFlag> 0.0.0.0 --port <n>`
