@@ -5,7 +5,8 @@ sources outside the Vite/React scaffold: no framework, no bundler, no
 runtime dependencies.
 
     public/            the app (index.html + assets/), served as-is
-    scripts/serve.mjs  dev server (node stdlib), binds --host/--port
+    scripts/serve.mjs  dev server (node stdlib), binds --host/--port and
+                       reloads the editor preview when public/ changes
     scripts/build.mjs  "build" = copy public/ to dist/
 
 `base44/config.jsonc` is the build contract. It is the Base44 CLI's own project
@@ -29,5 +30,11 @@ The repo's *shape* is not declared: Base44 detects that this isn't the standard
 scaffold (no `src/App.jsx`) and stamps `platform_scaffold: false` itself,
 overwriting anything the config claimed. Apps from a non-scaffold source lose
 the surfaces that assume that shape — page discovery, path categorization, and
-the editor's build-status, HMR and visual-edit integrations — and skip the
+the editor's build-status and visual-edit integrations — and skip the
 scaffold-only boot codemods.
+
+Live reload in the editor comes from `scripts/serve.mjs` itself. The editor's
+preview bridge imports `/@vite/client` and waits for Vite's HMR events, so the
+server answers that path with a small stand-in that sends the same events over
+a server-sent event stream (`/__reload`) and fires a reload when a file under
+`public/` changes. Drop it and the editor marks the preview as broken.
